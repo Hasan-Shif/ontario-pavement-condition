@@ -7,11 +7,14 @@ Run build_dataset.py first. The charts come from figures.py.
 import pathlib
 import sys
 
+import numpy as np
 import pandas as pd
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 from pci import gap_attribution
 from regions import label_text
+from pci import PCI_COEFFS
+from uncertainty import bootstrap_gap, LEVEL
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 
@@ -48,9 +51,15 @@ def compare(df, region_col="region"):
             continue
         g = gap_attribution(north.DMI.median(), north.IRI.median(),
                             south.DMI.median(), south.IRI.median(), "AC")
+        ci = bootstrap_gap(north[["DMI", "IRI"]].to_numpy(),
+                           south[["DMI", "IRI"]].to_numpy(),
+                           PCI_COEFFS["AC"])
         rows.append({"road_class": fc, "n_north": len(north),
                      "n_south": len(south), **g,
-                     "share_cracking": g["cracking"] / g["total"]})
+                     "share_cracking": g["cracking"] / g["total"],
+                     "total_low": ci["total_low"], "total_high": ci["total_high"],
+                     "share_low": ci["share_low"], "share_high": ci["share_high"],
+                     "excludes_zero": ci["excludes_zero"]})
     return pd.DataFrame(rows)
 
 
@@ -87,13 +96,17 @@ def main():
                                 (halves.loss_cracking + halves.loss_roughness))
     print(halves.round(2).to_string())
 
-    print("\nNorthern asphalt against southern asphalt, same road class")
+    print(f"\nNorthern asphalt against southern asphalt, same road class")
+    print(f"  (square brackets are {LEVEL}% bootstrap intervals)")
     gaps = compare(df)
     for _, r in gaps.iterrows():
+        sure = "" if r.excludes_zero else "   [could be chance]"
         print(f"  {r.road_class} ({r.n_north:.0f} north, {r.n_south:.0f} south): "
-              f"{r.total:+.1f} PCI, of which {r.cracking:+.1f} cracking "
-              f"and {r.roughness:+.1f} roughness "
-              f"({r.share_cracking:.0%} cracking)")
+              f"{r.total:+.1f} PCI  [{r.total_low:+.1f} to {r.total_high:+.1f}]"
+              f"{sure}")
+        print(f"      cracking {r.cracking:+.1f}, roughness {r.roughness:+.1f}, "
+              f"cracking is {r.share_cracking:.0%} "
+              f"[{r.share_low:.0%} to {r.share_high:.0%}] of it")
 
     strict, n_overlap, agreement = robustness(df)
     print(f"\nSame comparison using only sections that name a town themselves")

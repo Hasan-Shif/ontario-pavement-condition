@@ -1,2 +1,2 @@
-road_class,n_north,n_south,cracking,roughness,total,share_cracking
-ART,44,87,-7.649999999999997,-1.1625,-8.812499999999996,0.8680851063829788
+road_class,n_north,n_south,cracking,roughness,total,share_cracking,total_low,total_high,share_low,share_high,excludes_zero
+ART,44,87,-7.649999999999997,-1.1625,-8.812499999999996,0.8680851063829788,-15.63749999999999,-3.899812499999999,0.7696073753915391,1.182481751824818,True

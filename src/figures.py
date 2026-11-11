@@ -85,17 +85,20 @@ def fig3_north_south_gap(gaps):
     y = range(len(g))
     ax.barh(y, g.cracking, color=BLUE, label="cracking and surface damage")
     ax.barh(y, g.roughness, left=g.cracking, color=RED, label="roughness")
-    ax.set_xlim(g.total.min() * 1.28, 0)
+    ax.set_xlim(min(g.total_low.min() * 1.30, g.total.min() * 1.30), 0)
+    ax.errorbar(g.total, list(y), xerr=[g.total - g.total_low,
+                                        g.total_high - g.total],
+                fmt="none", ecolor=INK, elinewidth=1.4, capsize=4, capthick=1.4)
     for i, (_, r) in enumerate(g.iterrows()):
-        ax.annotate(f"{r.total:+.1f} PCI", xy=(r.total - 0.35, i),
+        ax.annotate(f"{r.total:+.1f}", xy=(r.total_low - 0.4, i),
                     ha="right", va="center", fontsize=9.5, color=INK,
                     fontweight="bold")
     ax.set_yticks(list(y))
     ax.set_yticklabels([f"{names[i]}\n{int(r.n_north)} vs {int(r.n_south)}"
                         for i, r in g.iterrows()])
     ax.axvline(0, color=INK, linewidth=0.9)
-    ax.set_xlabel("how far northern asphalt sits below southern asphalt, "
-                  "in PCI points")
+    ax.set_xlabel("how far northern asphalt sits below southern asphalt, in "
+                  "PCI points\nbars are 95% bootstrap intervals on the total")
     ax.set_title("The north's roads are more cracked, not much rougher",
                  loc="left", fontweight="bold")
     ax.legend(frameon=False, fontsize=9, ncol=2,

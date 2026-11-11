@@ -7,7 +7,8 @@ the two things it is actually made of, for all 1,861 sections in the 2023 file.
 > A road scoring 60 because it is cracked and a road scoring 60 because it is
 > rough need different repairs and different budgets. PCI cannot tell them
 > apart. Split it, and northern asphalt turns out to sit 7 to 11 points below
-> southern asphalt almost entirely because of cracking, not ride quality.
+> southern asphalt, and at least three quarters of that gap is cracking rather
+> than ride quality.
 
 ![PCI is a formula](figures/1_pci_is_a_formula.png)
 
@@ -55,10 +56,27 @@ northern highways also carry less traffic, get thinner structures and see
 smaller budgets. So I compared asphalt against asphalt inside the same road
 class, which holds most of that constant.
 
-The gap survives, and it is lopsided. On freeways the north sits 10.9 points
-lower, of which 8.5 is cracking and 2.4 is roughness. On arterials it is 6.8
-points, 5.9 of it cracking. On collectors, 10.9 points with 10.2 from
-cracking. Three road classes, three independent comparisons, same answer.
+The gap survives, and it is lopsided.
+
+| Road class | sections | PCI gap | 95% interval | cracking's share | 95% interval |
+|---|---|---|---|---|---|
+| Freeways | 13 vs 350 | -10.9 | -15.2 to -0.6 | 78% | 30% to 108% |
+| Arterials | 34 vs 244 | -6.8 | -11.8 to -3.7 | 86% | 75% to 101% |
+| Collectors | 47 vs 12 | -10.9 | -18.5 to -6.2 | 94% | 77% to 117% |
+
+The intervals come from resampling the sections 5,000 times, which is the
+honest way to report a median difference drawn from thirteen roads.
+
+All three gaps clear zero, so northern asphalt really does score lower. The
+share that cracking accounts for is well pinned down on arterials and
+collectors, where the interval never drops below three quarters. On freeways
+it runs from 30% to 108%, which is another way of saying thirteen sections
+cannot settle the question. Two road classes support the finding and the
+third is too thin to argue either way.
+
+A share above 100% is not a mistake. It means cracking accounts for more than
+the whole gap, because in those draws the northern road is slightly smoother
+and roughness pulls the other way.
 
 ![Distress against roughness](figures/4_two_axes.png)
 
@@ -120,6 +138,9 @@ invented or a year stale.
    themselves, as a check on step 3.
 5. **Attribute the gap.** Multiply the difference in each half by its
    coefficient to get the difference in PCI points.
+6. **Resample.** Draw the sections again with replacement 5,000 times and
+   take the middle 95% of the answers, so the gap comes with a range rather
+   than a single figure.
 
 Nothing is fitted or trained, apart from the two missing equations below.
 
@@ -163,13 +184,16 @@ pip install -r requirements.txt
 # put the 2022 and 2023 CSVs in data/raw/ as pci_2022.csv and pci_2023.csv
 python src/pci.py             # runs the built-in tests
 python src/regions.py         # runs its tests too
+python src/uncertainty.py     # and these
 python src/build_dataset.py   # writes data/processed/sections.csv
 python src/analyse.py         # the comparison, and the data quality audit
 python src/figures.py         # the four charts above
 ```
 
-`pci.py` has six doctests and `regions.py` has three. `analyse.py` prints
-the data quality audit and both versions of the comparison.
+`pci.py` has six doctests, `regions.py` three and `uncertainty.py` five.
+`analyse.py` prints the data quality audit and both versions of the
+comparison. The resampling uses a fixed seed, so it gives the same answer
+every run.
 
 ## What's weak about it
 
@@ -178,13 +202,14 @@ the data quality audit and both versions of the comparison.
   runs 1,885 km and crosses the boundary, so it is excluded rather than
   guessed at. Joining the Ontario Road Network, which has coordinates, would
   fix this properly and is the first thing I want to add.
-- **Thirteen northern freeway sections** carry the freeway comparison. That is
-  a thin basis for a median, and it is why I ran three road classes rather
-  than one. Under the strict labelling the freeway and collector comparisons
-  fall below ten sections a side and drop out entirely.
-- **No confidence intervals.** I quote medians and their difference with
-  nothing around them. With thirteen sections on one side of a comparison
-  that is not good enough, and bootstrapping the gaps is the next fix.
+- **Thirteen northern freeway sections** carry the freeway comparison, and the
+  resampling says plainly that this is not enough: the cracking share could be
+  anywhere from 30% to 108%. The finding rests on arterials and collectors.
+  Under the strict labelling the freeway and collector comparisons fall below
+  ten sections a side and drop out entirely.
+- **The intervals assume the sections are independent.** Neighbouring
+  sections of the same highway were paved at the same time by the same crew,
+  so they are not, and the real intervals are wider than the ones I quote.
 - **North and south is a crude stand-in for climate.** The real variable is
   freeze-thaw cycles and the freezing index, which ClimateData.ca publishes
   for the whole country. Pairing those to each section is the obvious next
